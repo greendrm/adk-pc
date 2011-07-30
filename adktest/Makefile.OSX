@@ -1,0 +1,7 @@
+CC = gcc
+
+all:
+	$(CC) adktest.c -I/usr/local/include -o adktest -lusb-1.0.0 -I/usr/local/include -I/usr/local/include/libusb-1.0 -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
+
+clean:
+	rm -f adktest
