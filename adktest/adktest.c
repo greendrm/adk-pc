@@ -5,7 +5,7 @@
 #define ENDPOINT_BULK_IN 0x83
 #define ENDPOINT_BULK_OUT 0x03 // Have tried 0x00, 0x01 and 0x02
 
-#define VID 0x18D1
+#define VID 0x18D1 // Google
 #define PID 0x4E21 // Nexus S UMS only
 
 #define ACCESSORY_PID 0x2D00
@@ -22,7 +22,7 @@ Testing on Nexus One with Gingerbread 2.3.4
 
 static int mainPhase(); // dojip
 static int transferTest();
-static int init(void);
+static int openDevice(void);
 static int shutdown(void);
 static void error(int code);
 static void status(int code);
@@ -33,6 +33,7 @@ const char* description,
 const char* version,
 const char* uri,
 const char* serialNumber);
+static void scanDevices();
 static int getDesc();
 
 //static
@@ -41,7 +42,11 @@ static unsigned char acc_bulk_in, acc_bulk_out;
 
 int main (int argc, char *argv[])
 {
-	if (init() < 0)
+	libusb_init(NULL);
+
+	scanDevices();
+
+	if (openDevice() < 0)
 		return;
 
 	if (setupAccessory(
@@ -72,6 +77,36 @@ int main (int argc, char *argv[])
 	shutdown();
 	fprintf(stdout, "Finished\n");
 	return 0;
+}
+
+static void scanDevices()
+{
+	libusb_device **list;
+	int cnt, r;
+	int i;
+
+	cnt = libusb_get_device_list(NULL, &list);
+	if (cnt < 0) {
+		error(cnt);
+		return;
+	}
+
+	fprintf(stdout, "found %d devices\n", cnt);
+
+	for (i = 0; i < cnt; i++) {
+		struct libusb_device_descriptor desc;
+		libusb_device *dev = list[i];
+
+		r = libusb_get_device_descriptor(dev, &desc);
+		if (r < 0) {
+			fprintf(stderr, "failed to get device descriptor");
+			return;
+		}
+		fprintf(stdout, "device %d: Vendor: %x product: %x\n",
+				i, desc.idVendor, desc.idProduct);
+	}
+
+	libusb_free_device_list(list, 1);
 }
 
 static int getDesc()
@@ -205,9 +240,9 @@ static int transferTest(){
 }
 
 
-static int init(void) 
+static int openDevice(void) 
 {
-	libusb_init(NULL);
+	//libusb_init(NULL);
 
 	handle = libusb_open_device_with_vid_pid(NULL, VID, PID);
 	if(handle == NULL) {
