@@ -24,7 +24,7 @@ public class UsbReceiver extends BroadcastReceiver{
 							+ accessory);
 				}
 		} else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
-			UsbAccessory accessory = UsbManager.getAccessory(intent);
+			//UsbAccessory accessory = UsbManager.getAccessory(intent);
 		}
 	}		
 }

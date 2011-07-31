@@ -3,8 +3,6 @@ package ch.serverbox.android.usbtest;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
 
 import com.android.future.usb.UsbAccessory;
 import com.android.future.usb.UsbManager;
@@ -15,7 +13,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.nfc.NfcManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -24,6 +21,8 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 public class UsbTest extends Activity {
+	private final static boolean DEBUG = true;
+	private final static String TAG = "USB"; 
 	private UsbAccessory mAccessory = null;
 	private Button mBtSend = null;
 	private FileOutputStream mFout = null;
@@ -34,7 +33,6 @@ public class UsbTest extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        //((NfcManager)getSystemService(NFC_SERVICE)).getDefaultAdapter().enableForegroundDispatch(this, intent, filters, techLists)
         IntentFilter i = new IntentFilter();
         i.addAction(UsbManager.ACTION_USB_ACCESSORY_ATTACHED);
         i.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
@@ -42,7 +40,7 @@ public class UsbTest extends Activity {
         registerReceiver(mUsbReceiver,i);
         
         if(getIntent().getAction().equals("android.hardware.usb.action.USB_ACCESSORY_ATTACHED")){
-        	Log.d("USB","Action is usb");
+        	if (DEBUG) Log.d("USB","Action is usb");
         	UsbAccessory accessory = UsbManager.getAccessory(getIntent());
         	mAccessory = accessory;
         	FileDescriptor fd = null;
@@ -56,14 +54,21 @@ public class UsbTest extends Activity {
         	mFout = new FileOutputStream(fd);
         }else{
         	UsbAccessory[] accessories = UsbManager.getInstance(this).getAccessoryList();
-        	for(UsbAccessory a : accessories){
-        		l("accessory: "+a.getManufacturer());
-        		if(a.getManufacturer().equals("Nexus-Computing GmbH")){
-        			mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent("ch.serverbox.android.usbtest.USBPERMISSION"),0);
-        			UsbManager.getInstance(this).requestPermission(a,mPermissionIntent);
-        			Log.d("USB", "permission requested");
-        			break;
+        	try {
+        		for(UsbAccessory a : accessories){
+        			l("accessory: "+a.getManufacturer());
+        			if(a.getManufacturer().equals("Nexus-Computing GmbH")){
+        				mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent("ch.serverbox.android.usbtest.USBPERMISSION"),0);
+        				UsbManager.getInstance(this).requestPermission(a,mPermissionIntent);
+        				Log.d("USB", "permission requested");
+        				break;
+        			}
         		}
+        	}
+        	catch (NullPointerException e) {
+        		if (DEBUG) Log.d(TAG, "No accessory");
+        		Toast.makeText(this, "No accessory", Toast.LENGTH_LONG);
+        		finish();
         	}
         }
         
@@ -79,6 +84,7 @@ public class UsbTest extends Activity {
     
     @Override
     protected void onDestroy() {
+    	if (DEBUG) Log.d(TAG, "onDestroy()");
     	unregisterReceiver(mUsbReceiver);
     	super.onDestroy();
     }
@@ -167,6 +173,6 @@ public class UsbTest extends Activity {
 	};
 	
 	private void l(String l){
-		Log.d("USB", l);
+		if (DEBUG) Log.d(TAG, l);
 	}
 }
