@@ -7,9 +7,12 @@
 
 #define VID 0x18D1 // Google
 #define PID 0x4E21 // Nexus S UMS only
+#define ADB_PID 0x4E22 // Nexus S UMS+ADB only
 
 #define ACCESSORY_PID 0x2D00
 #define ACCESSORY_ADB_PID 0x2D01 // Can't get this to work, if ADB is active, can't get handle on device
+
+//#define ACCESSORY_ADB_ENABLED 1
 
 /*
 ON OSX
@@ -244,7 +247,11 @@ static int openDevice(void)
 {
 	//libusb_init(NULL);
 
+#ifdef ACCESSORY_ADB_ENABLED
+	handle = libusb_open_device_with_vid_pid(NULL, VID, ADB_PID);
+#else
 	handle = libusb_open_device_with_vid_pid(NULL, VID, PID);
+#endif
 	if(handle == NULL) {
 		fprintf(stdout, "Problem acquiring handle\n");
 		return -1;
@@ -331,7 +338,11 @@ static int setupAccessory(
 	int tries = 4;
 	for (;;) {
 		tries--;
+#ifdef ACCESSORY_ADB_ENABLED
+		handle = libusb_open_device_with_vid_pid(NULL, VID, ACCESSORY_ADB_PID);
+#else
 		handle = libusb_open_device_with_vid_pid(NULL, VID, ACCESSORY_PID);
+#endif
 		if (handle == NULL) {
 			if (tries < 0) {
 				return -1;
